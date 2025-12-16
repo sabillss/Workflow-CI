@@ -12,12 +12,20 @@ import mlflow.sklearn
 print("=== modelling.py START ===")
 
 def main():
-    # 1) tracking: pakai env kalau ada (GitHub Actions), fallback ke lokal
-    tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns")
-    mlflow.set_tracking_uri(tracking_uri)
-    mlflow.set_experiment("student_performance_g3")
+    # Kalau dijalankan via "mlflow run", MLflow Project sudah bikin RUN_ID
+    run_id_from_project = os.getenv("MLFLOW_RUN_ID")
 
-    # 2) Load dataset preprocessing (BUKAN RAW)
+    if not run_id_from_project:
+        # Mode manual (python modelling.py) -> boleh pakai tracking lokal
+        tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns")
+        mlflow.set_tracking_uri(tracking_uri)
+        mlflow.set_experiment("student_performance_g3")
+        print("Mode: direct run | Tracking URI:", tracking_uri)
+    else:
+        # Mode MLflow Project -> JANGAN set_tracking_uri (biar run-id ketemu)
+        print("Mode: mlflow project | MLFLOW_RUN_ID:", run_id_from_project)
+
+    # Load dataset preprocessing (BUKAN RAW)
     data_path = "namadataset_preprocessing/student_performance_processed.csv"
     df = pd.read_csv(data_path)
 
@@ -25,7 +33,7 @@ def main():
     if target_col not in df.columns:
         raise ValueError(f"Target column '{target_col}' tidak ditemukan!")
 
-    # 3) boolean -> 0/1 (aman untuk sklearn)
+    # boolean -> 0/1
     bool_cols = df.select_dtypes(include="bool").columns
     if len(bool_cols) > 0:
         df[bool_cols] = df[bool_cols].astype(int)
@@ -33,38 +41,30 @@ def main():
     X = df.drop(columns=[target_col])
     y = df[target_col]
 
-    # kalau masih ada object, stop (berarti preprocessing belum bersih)
+    # kalau masih ada object, stop
     if (X.dtypes == "object").any():
         obj_cols = X.columns[X.dtypes == "object"].tolist()
         raise ValueError(f"Masih ada kolom object: {obj_cols}")
 
-    # 4) split
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42
     )
 
-    # 5) autolog (Basic)
     mlflow.sklearn.autolog()
 
     with mlflow.start_run(run_name="rf_regression_g3"):
-        model = RandomForestRegressor(
-            n_estimators=200,
-            random_state=42
-        )
+        model = RandomForestRegressor(n_estimators=200, random_state=42)
         model.fit(X_train, y_train)
 
         preds = model.predict(X_test)
         mae = mean_absolute_error(y_test, preds)
-
-        # RMSE aman untuk semua versi sklearn
         rmse = np.sqrt(mean_squared_error(y_test, preds))
-
         r2 = r2_score(y_test, preds)
 
-        print("Tracking URI:", tracking_uri)
         print("MAE :", mae)
         print("RMSE:", rmse)
         print("R2  :", r2)
 
 if __name__ == "__main__":
     main()
+
