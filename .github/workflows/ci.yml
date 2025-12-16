@@ -10,6 +10,8 @@ on:
 jobs:
   train:
     runs-on: ubuntu-latest
+    env:
+      MLFLOW_TRACKING_URI: file:${{ github.workspace }}/mlruns
     steps:
       - uses: actions/checkout@v4
 
