@@ -7,7 +7,7 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:  
 
 jobs:
   mlflow-training:
@@ -16,19 +16,19 @@ jobs:
     steps:
       # 1. Checkout code
       - name: Checkout repository
-        uses: actions/checkout@v4  # ✅ Update ke v4
+        uses: actions/checkout@v4  # 
       
       # 2. Set up Python
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v5  # ✅ Update ke v5
+      - name: Set up Python 3.12.7
+        uses: actions/setup-python@v5  # 
         with:
-          python-version: '3.9'
+          python-version: '3.12.7'
       
       # 3. Install dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install mlflow scikit-learn pandas numpy matplotlib seaborn joblib
+          pip install mlflow==2.19.0 scikit-learn pandas numpy matplotlib seaborn joblib
       
       # 4. Check environment
       - name: Check Env
@@ -47,7 +47,7 @@ jobs:
         run: |
           mlflow run . \
             --experiment-name "Student Performance CI/CD" \
-            -P data_path=data_preprocessing/credit_data_clean.csv \
+            -P data_path=namadataset_preprocessing/student_performance_processed.csv \
             -P n_estimators=100 \
             -P max_depth=10 \
             -P random_state=42
