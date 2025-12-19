@@ -67,5 +67,5 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add artifacts/
-          git diff --quiet && git diff --staged --quiet || git commit -m "🤖 Auto-commit: MLflow training artifacts [skip ci]"
+          git diff --quiet && git diff --staged --quiet || git commit -m "Auto-commit: MLflow training artifacts [skip ci]"
           git push
