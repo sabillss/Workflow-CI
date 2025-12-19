@@ -1,70 +1,75 @@
-import os
-import pandas as pd
-import numpy as np
-
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from sklearn.ensemble import RandomForestRegressor
-
 import mlflow
 import mlflow.sklearn
+import pandas as pd
+import argparse
+import os
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+import joblib
 
-print("=== modelling.py START ===")
+# Parse arguments
+parser = argparse.ArgumentParser()
+parser.add_argument("--data_path", type=str, default="data_preprocessing/credit_data_clean.csv")
+parser.add_argument("--n_estimators", type=int, default=100)
+parser.add_argument("--max_depth", type=int, default=10)
+parser.add_argument("--random_state", type=int, default=42)
+args = parser.parse_args()
 
-def main():
-    # Kalau dijalankan via "mlflow run", MLflow Project sudah bikin RUN_ID
-    run_id_from_project = os.getenv("MLFLOW_RUN_ID")
+# Create experiment
+mlflow.set_experiment("Student Performance CI/CD")
 
-    if not run_id_from_project:
-        # Mode manual (python modelling.py) -> boleh pakai tracking lokal
-        tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns")
-        mlflow.set_tracking_uri(tracking_uri)
-        mlflow.set_experiment("student_performance_g3")
-        print("Mode: direct run | Tracking URI:", tracking_uri)
-    else:
-        # Mode MLflow Project -> JANGAN set_tracking_uri (biar run-id ketemu)
-        print("Mode: mlflow project | MLFLOW_RUN_ID:", run_id_from_project)
+# Load data
+print(f"Loading data from: {args.data_path}")
+df = pd.read_csv(args.data_path)
 
-    # Load dataset preprocessing (BUKAN RAW)
-    data_path = "namadataset_preprocessing/student_performance_processed.csv"
-    df = pd.read_csv(data_path)
+# Target column
+target_column = 'G3'
+X = df.drop(target_column, axis=1)
+y = df[target_column]
 
-    target_col = "G3"
-    if target_col not in df.columns:
-        raise ValueError(f"Target column '{target_col}' tidak ditemukan!")
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=args.random_state
+)
 
-    # boolean -> 0/1
-    bool_cols = df.select_dtypes(include="bool").columns
-    if len(bool_cols) > 0:
-        df[bool_cols] = df[bool_cols].astype(int)
-
-    X = df.drop(columns=[target_col])
-    y = df[target_col]
-
-    # kalau masih ada object, stop
-    if (X.dtypes == "object").any():
-        obj_cols = X.columns[X.dtypes == "object"].tolist()
-        raise ValueError(f"Masih ada kolom object: {obj_cols}")
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
+# Start MLflow run
+with mlflow.start_run(run_name="CI_Training_Run"):
+    # Train model
+    model = RandomForestRegressor(
+        n_estimators=args.n_estimators,
+        max_depth=args.max_depth,
+        random_state=args.random_state
     )
-
-    mlflow.sklearn.autolog()
-
-    with mlflow.start_run(run_name="rf_regression_g3"):
-        model = RandomForestRegressor(n_estimators=200, random_state=42)
-        model.fit(X_train, y_train)
-
-        preds = model.predict(X_test)
-        mae = mean_absolute_error(y_test, preds)
-        rmse = np.sqrt(mean_squared_error(y_test, preds))
-        r2 = r2_score(y_test, preds)
-
-        print("MAE :", mae)
-        print("RMSE:", rmse)
-        print("R2  :", r2)
-
-if __name__ == "__main__":
-    main()
-
+    model.fit(X_train, y_train)
+    
+    # Predict
+    y_pred = model.predict(X_test)
+    
+    # Calculate metrics
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+    mae = mean_absolute_error(y_test, y_pred)
+    r2 = r2_score(y_test, y_pred)
+    
+    # Log parameters
+    mlflow.log_param("n_estimators", args.n_estimators)
+    mlflow.log_param("max_depth", args.max_depth)
+    mlflow.log_param("random_state", args.random_state)
+    mlflow.log_param("data_path", args.data_path)
+    
+    # Log metrics
+    mlflow.log_metric("rmse", rmse)
+    mlflow.log_metric("mae", mae)
+    mlflow.log_metric("r2_score", r2)
+    
+    # Log model
+    mlflow.sklearn.log_model(
+        model, 
+        "model",
+        signature=mlflow.models.infer_signature(X_train, model.predict(X_train))
+    )
+    
+    # Save model locally for GitHub artifacts
+    os.makedirs("../artifacts/model", exist_ok=True)
+    joblib.dump(model, '../artifacts/model/model.pkl')
