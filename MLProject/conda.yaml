@@ -1,11 +1,13 @@
-name: student-performance-env
+name: mlflow-env
 channels:
   - conda-forge
+  - defaults
 dependencies:
-  - python=3.11
+  - python=3.12.7
   - pip
   - pip:
-      - mlflow
+      - mlflow==2.19.0
+      - scikit-learn==1.5.2
       - pandas
       - numpy
-      - scikit-learn
+      - seaborn
