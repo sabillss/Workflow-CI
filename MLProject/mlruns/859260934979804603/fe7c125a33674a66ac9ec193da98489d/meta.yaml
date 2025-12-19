@@ -1,0 +1,14 @@
+artifact_uri: file:D:/DICODING/ASAH/SMSML_Sabillah_Nur/Workflow-CI/MLProject/mlruns/859260934979804603/fe7c125a33674a66ac9ec193da98489d/artifacts
+end_time: 1765867723046
+entry_point_name: ''
+experiment_id: '859260934979804603'
+lifecycle_stage: active
+run_id: fe7c125a33674a66ac9ec193da98489d
+run_name: rf_regression_g3
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1765867715515
+status: 3
+tags: []
+user_id: sabil

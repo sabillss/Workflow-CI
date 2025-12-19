@@ -1,0 +1,10 @@
+artifact_location: file:D:/DICODING/ASAH/SMSML_Sabillah_Nur/Workflow-CI/MLProject/mlruns/859260934979804603/models/m-013cee34832f46e9ba68769d5bed4986/artifacts
+creation_timestamp: 1765867716674
+experiment_id: '859260934979804603'
+last_updated_timestamp: 1765867722843
+model_id: m-013cee34832f46e9ba68769d5bed4986
+model_type: null
+name: model
+source_run_id: fe7c125a33674a66ac9ec193da98489d
+status: 2
+status_message: null
