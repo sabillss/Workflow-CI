@@ -7,58 +7,54 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch:  
+  workflow_dispatch:
 
 jobs:
   mlflow-training:
     runs-on: ubuntu-latest
     
     steps:
-      # 1. Checkout code
       - name: Checkout repository
-        uses: actions/checkout@v4  # 
+        uses: actions/checkout@v4
       
-      # 2. Set up Python
-      - name: Set up Python 3.12.7
-        uses: actions/setup-python@v5  # 
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: '3.12.7'
+          auto-update-conda: true
+          python-version: 3.12.7
+          activate-environment: mlflow-env
       
-      # 3. Install dependencies
       - name: Install dependencies
+        shell: bash -l {0}  
         run: |
-          python -m pip install --upgrade pip
-          pip install mlflow==2.19.0 scikit-learn pandas numpy matplotlib seaborn joblib
+          conda install -c conda-forge mlflow==2.19.0 scikit-learn pandas numpy matplotlib seaborn joblib -y
       
-      # 4. Check environment
       - name: Check Env
+        shell: bash -l {0}
         run: |
           python --version
-          pip list
+          conda list
       
-      # 5. Set MLflow Tracking URI
       - name: Set MLflow Tracking URI
         run: |
           echo "MLFLOW_TRACKING_URI=file:///tmp/mlruns" >> $GITHUB_ENV
       
-      # 6. Run MLflow project
       - name: Run mlflow project
+        shell: bash -l {0}  
         working-directory: MLProject
         run: |
           mlflow run . \
             --experiment-name "Student Performance CI/CD" \
-            -P data_path=namadataset_preprocessing/student_performance_processed.csv \
+            -P data_path=data_preprocessing/credit_data_clean.csv \
             -P n_estimators=100 \
             -P max_depth=10 \
             -P random_state=42
       
-      # 7. List generated artifacts
       - name: List artifacts
         run: |
           echo "Generated artifacts:"
           ls -la artifacts/model/
       
-      # 8. Upload artifacts to GitHub
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -66,11 +62,10 @@ jobs:
           path: artifacts/model/
           retention-days: 30
       
-      # 9. Commit artifacts back to repo
       - name: Commit artifacts to repository
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add artifacts/
-          git diff --quiet && git diff --staged --quiet || git commit -m " Auto-commit: MLflow training artifacts [skip ci]"
+          git diff --quiet && git diff --staged --quiet || git commit -m "🤖 Auto-commit: MLflow training artifacts [skip ci]"
           git push
