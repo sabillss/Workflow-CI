@@ -7,7 +7,7 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch:  
+  workflow_dispatch:  # Manual trigger
 
 jobs:
   mlflow-training:
@@ -16,11 +16,11 @@ jobs:
     steps:
       # 1. Checkout code
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4  # ✅ Update ke v4
       
       # 2. Set up Python
       - name: Set up Python 3.9
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5  # ✅ Update ke v5
         with:
           python-version: '3.9'
       
@@ -28,7 +28,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install mlflow scikit-learn pandas numpy matplotlib seaborn
+          pip install mlflow scikit-learn pandas numpy matplotlib seaborn joblib
       
       # 4. Check environment
       - name: Check Env
@@ -58,10 +58,19 @@ jobs:
           echo "Generated artifacts:"
           ls -la artifacts/model/
       
-      # 8. Upload artifacts (tetap sama)
+      # 8. Upload artifacts to GitHub
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: mlflow-model
           path: artifacts/model/
           retention-days: 30
+      
+      # 9. Commit artifacts back to repo
+      - name: Commit artifacts to repository
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add artifacts/
+          git diff --quiet && git diff --staged --quiet || git commit -m " Auto-commit: MLflow training artifacts [skip ci]"
+          git push
