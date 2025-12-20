@@ -4,9 +4,4 @@ conda_env: conda.yaml
 
 entry_points:
   main:
-    parameters:
-      data_path: {type: string, default: "namadataset_preprocessing/student_performance_processed.csv"}
-      n_estimators: {type: int, default: 100}
-      max_depth: {type: int, default: 10}
-      random_state: {type: int, default: 42}
-    command: "python modelling.py --data_path {data_path} --n_estimators {n_estimators} --max_depth {max_depth} --random_state {random_state}"
+    command: "python modelling.py"

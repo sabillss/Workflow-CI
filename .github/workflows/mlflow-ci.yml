@@ -43,12 +43,7 @@ jobs:
         shell: bash -l {0}  
         working-directory: MLProject
         run: |
-          mlflow run . \
-            --experiment-name "Student Performance CI/CD" \
-            -P data_path=namadataset_preprocessing/student_performance_processed.csv \
-            -P n_estimators=100 \
-            -P max_depth=10 \
-            -P random_state=42
+          mlflow run . -e main --env-manager=local
       
       - name: List artifacts
         run: |
