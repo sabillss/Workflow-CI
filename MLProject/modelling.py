@@ -49,7 +49,7 @@ with mlflow.start_run(run_name="CI_Training_Run"):
     y_pred = model.predict(X_test)
     
     # Auto evaluate and log metrics
-    mlflow.evaluate(model, X_test, y_test, targets=y_test, model_type="regressor")
+    mlflow.evaluate(model, X_test, targets=y_test, model_type="regressor")
     
     # Save model locally for GitHub artifacts
     os.makedirs("../artifacts/model", exist_ok=True)
