@@ -1,57 +1,53 @@
-import mlflow
-import pandas as pd
-import argparse
 import os
-import numpy as np
+import argparse
+import pandas as pd
+import mlflow
+import mlflow.sklearn
+
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 import joblib
 
-# Parse arguments
-parser = argparse.ArgumentParser()
-parser.add_argument("--data_path", type=str, default="namadataset_preprocessing/student_performance_processed.csv")
-parser.add_argument("--n_estimators", type=int, default=100)
-parser.add_argument("--max_depth", type=int, default=10)
-parser.add_argument("--random_state", type=int, default=42)
-args = parser.parse_args()
 
-# Create experiment
-mlflow.set_experiment("Student Performance CI/CD")
+def parse_args():
+    p = argparse.ArgumentParser()
+    p.add_argument("--data_path", type=str, default="namadataset_preprocessing/student_performance_processed.csv")
+    p.add_argument("--n_estimators", type=int, default=100)
+    p.add_argument("--max_depth", type=int, default=10)
+    p.add_argument("--random_state", type=int, default=42)
+    return p.parse_args()
 
-# Enable autologging dengan konfigurasi lengkap
-mlflow.sklearn.autolog(
-    log_input_examples=True,
-    log_model_signatures=True,
-    log_models=True
-)
 
-# Load data
-print(f"Loading data from: {args.data_path}")
-df = pd.read_csv(args.data_path)
+def main():
+    args = parse_args()
+    mlflow.sklearn.autolog(
+        log_input_examples=True,
+        log_model_signatures=True,
+        log_models=True
+    )
 
-# Target column
-target_column = 'G3'
-X = df.drop(target_column, axis=1)
-y = df[target_column]
+    print(f"Loading data from: {args.data_path}")
+    df = pd.read_csv(args.data_path)
 
-# Split data
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=args.random_state
-)
+    target_column = "G3"
+    X = df.drop(target_column, axis=1)
+    y = df[target_column]
 
-# Start MLflow run
-with mlflow.start_run(run_name="CI_Training_Run"):
-    # Train model
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=args.random_state
+    )
+    
     model = RandomForestRegressor(
         n_estimators=args.n_estimators,
         max_depth=args.max_depth,
         random_state=args.random_state
     )
     model.fit(X_train, y_train)
-    
-    # Predict
-    y_pred = model.predict(X_test)
-    
-    # Save model locally for GitHub artifacts
-    os.makedirs("../artifacts/model", exist_ok=True)
-    joblib.dump(model, '../artifacts/model/model.pkl')
+
+    out_dir = "artifacts/model"
+    os.makedirs(out_dir, exist_ok=True)
+    joblib.dump(model, os.path.join(out_dir, "model.pkl"))
+
+
+if __name__ == "__main__":
+    main()
