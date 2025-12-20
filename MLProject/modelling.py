@@ -18,8 +18,12 @@ args = parser.parse_args()
 # Create experiment
 mlflow.set_experiment("Student Performance CI/CD")
 
-# Enable autologging
-mlflow.autolog()
+# Enable autologging dengan konfigurasi lengkap
+mlflow.sklearn.autolog(
+    log_input_examples=True,
+    log_model_signatures=True,
+    log_models=True
+)
 
 # Load data
 print(f"Loading data from: {args.data_path}")
@@ -47,9 +51,6 @@ with mlflow.start_run(run_name="CI_Training_Run"):
     
     # Predict
     y_pred = model.predict(X_test)
-    
-    # Auto evaluate and log metrics
-    mlflow.evaluate(model, X_test, targets=y_test, model_type="regressor")
     
     # Save model locally for GitHub artifacts
     os.makedirs("../artifacts/model", exist_ok=True)
